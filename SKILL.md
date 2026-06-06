@@ -1,5 +1,5 @@
 ---
-name: workflow-generator
+name: ade-teams-orchestrator
 description: 根据用户目标直接生成 ADE Teams 工作流 YAML。在生成 YAML 前，先完成工作流编排设计，包括任务拆解、节点选择、角色匹配、变量流转、串行/并行/分支/循环、异常处理和验收标准设计。缺少真实 ADE 或 Workspace 信息时，仍直接生成待绑定 YAML，agent/code 节点中的 ade_id、ade_name、ade_role、workspace_id、workspace_name 留空，由用户在 Web 前端图形化界面补齐后再保存和运行。
 ---
 

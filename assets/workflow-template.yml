@@ -1,0 +1,101 @@
+# ADE Teams 工作流模板：待绑定 YAML
+# 使用方式：导入或复制到配置文件编辑器后，在 Web 前端图形化界面中为每个 ADE 节点选择具体 ADE 和 Workspace。
+
+nodes:
+  - type: start
+    title: 开始
+    _advanced:
+      id: start
+      style: '{"x":40,"y":80}'
+      data:
+        variables:
+          - type: text-input
+            label: 任务主题
+            required: true
+            variable: topic
+
+  # 建议绑定 ProductManager 角色的 ADE Worker，并选择可访问输入材料的 Workspace。
+  - type: agent
+    title: ADE-需求分析
+    data:
+      command_config:
+        task_desc: |-
+          你是一位资深产品经理。请基于以下输入完成需求分析。
+
+          【任务主题】{{ref.start.topic}}
+
+          请完成以下任务：
+          1. 梳理用户目标和业务背景。
+          2. 拆解核心功能需求。
+          3. 梳理异常场景和边界条件。
+          4. 输出待确认问题。
+
+          请将需求分析结果保存为 Markdown 文件，并将文件路径赋值给 {{out.requirement_doc_path}}。
+
+          如果无法完成任务，请说明失败原因、缺失信息、已完成部分和建议下一步。
+        user_message:
+          - type: text
+            text: |-
+              你是一位资深产品经理。请基于以下输入完成需求分析。
+
+              【任务主题】{{ref.start.topic}}
+
+              请完成以下任务：
+              1. 梳理用户目标和业务背景。
+              2. 拆解核心功能需求。
+              3. 梳理异常场景和边界条件。
+              4. 输出待确认问题。
+
+              请将需求分析结果保存为 Markdown 文件，并将文件路径赋值给 {{out.requirement_doc_path}}。
+
+              如果无法完成任务，请说明失败原因、缺失信息、已完成部分和建议下一步。
+        user_scenario: default
+      verification_config:
+        task_desc: "{{out.requirement_doc_path}} 不为空，且文件已生成，且文档包含业务背景、核心需求、异常场景、边界条件和待确认问题。"
+        user_message:
+          - type: text
+            text: "{{out.requirement_doc_path}} 不为空，且文件已生成，且文档包含业务背景、核心需求、异常场景、边界条件和待确认问题。"
+        user_scenario: default
+      variable_assignments: []
+      loop_break_conditions: []
+      loop_logical_operator: and
+      loop_validation_enabled: false
+      loop_max_count: 10
+    _advanced:
+      id: ade_1
+      style: '{"x":280,"y":80}'
+      data:
+        ade_id: ""
+        ade_name: ""
+        ade_role: ""
+        workspace_id: ""
+        workspace_name: ""
+        output_variables:
+          - type: string
+            label: 需求分析文件路径
+            variable: requirement_doc_path
+
+  - type: end
+    title: 结束
+    _advanced:
+      id: end
+      style: '{"x":520,"y":80}'
+      data:
+        outputs:
+          - id: out-requirement-doc
+            variable: 需求分析文件路径
+            value_selector:
+              - ade_1
+              - requirement_doc_path
+
+edges:
+  - source: start
+    target: ade_1
+    sourceHandle: source
+    _advanced:
+      id: edge_1
+  - source: ade_1
+    target: end
+    sourceHandle: source
+    _advanced:
+      id: edge_2

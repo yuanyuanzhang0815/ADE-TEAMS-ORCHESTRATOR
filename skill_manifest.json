@@ -1,0 +1,5 @@
+{
+  "skill_name": "workflow-generator",
+  "description": "ADE Teams workflow orchestrator and YAML generator. It directly generates YAML, leaves ADE and Workspace binding fields empty when not provided, and requires users to bind them in the Web UI.",
+  "version": "2026-06-06-final"
+}

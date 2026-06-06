@@ -151,6 +151,7 @@ workflow_intent:
   risk_level: low | medium | high
   execution_mode: single | sequential | parallel_limited | parallel_fanout | gated_loop
   human_checkpoints:
+  required_skills:
   worker_strategy:
   budget_or_time_hint:
   proof_requirements:
@@ -159,6 +160,7 @@ workflow_intent:
     - node_id:
       node_type:
       role_or_capability:
+      skill_invocation:
       responsibility:
       inputs:
       outputs:
@@ -176,9 +178,10 @@ workflow_intent:
 5. 分支节点必须说明判断变量和 true / false 去向；
 6. 循环节点必须说明最大次数、退出条件、每轮检查依据和失败后的处理；
 7. 高风险动作必须进入 `human_checkpoints`，不得默认自动执行；
-8. `failure_policy` 必须区分可重试、需用户决策、失败终止和可接受部分结果。
+8. 如节点依赖已有技能，必须在 `required_skills` 和节点 `skill_invocation` 中记录，并在 YAML 的 `task_desc` / `user_message` 中优先使用 `/技能名` 直接调用；
+9. `failure_policy` 必须区分可重试、需用户决策、失败终止和可接受部分结果。
 
-更多细则见 `references/orchestration-design.md`。
+更多细则见 `references/orchestration-design.md` 和 `references/skill-invocation.md`。
 
 ### 阶段 3：生成 YAML
 
@@ -398,6 +401,31 @@ agent 节点用于 ADE 执行需要理解、分析、生成、评审、修改的
 4. 输出要求；
 5. 输出变量赋值方式；
 6. 无法完成时的失败说明。
+
+如果 agent 节点需要调用已有技能，必须优先使用平台原生 `/技能名` 方式，而不是用自然语言描述“请加载某技能”。
+
+推荐写法：
+
+```yaml
+task_desc: |-
+  使用 /lightweight-prd 技能，将以下 PRD 原文改写为轻量化 PRD。
+  严格按照 /lightweight-prd 技能规定的文档结构和写作原则输出。
+user_message:
+  - type: text
+    text: |-
+      /lightweight-prd
+
+      请将以下 PRD 原文改写为轻量化 PRD。
+```
+
+禁止写法：
+
+```yaml
+task_desc: |-
+  请先加载 lightweight-prd 技能，然后严格按照该技能的文档结构输出。
+```
+
+原因：`/技能名` 是平台原生技能调用机制，可以直接注入技能完整指令；自然语言描述依赖 Agent 自行理解和执行，约束力更弱。
 
 ### 6.3 code 节点
 
@@ -1150,7 +1178,15 @@ workflow-<主题关键词>-<日期>.yml
 5. end 节点 outputs 都引用真实上游变量；
 6. 文件路径变量以 `_path` 结尾。
 
-### 16.3 编排自检
+### 16.3 技能调用自检
+
+1. 需要复用已有技能时，优先使用 `/技能名` 直接调用；
+2. 不用自然语言描述“请加载某技能”替代 `/技能名`；
+3. `task_desc` 和 `user_message` 中的技能调用方式一致；
+4. `workflow_intent.required_skills` 与节点实际调用的技能一致；
+5. 不编造不存在或未确认的技能名。
+
+### 16.4 编排自检
 
 1. 节点拆分必要；
 2. 无重复节点；
@@ -1161,7 +1197,7 @@ workflow-<主题关键词>-<日期>.yml
 7. 高风险动作有人工确认；
 8. ADE 建议角色与任务匹配。
 
-### 16.4 绑定自检
+### 16.5 绑定自检
 
 1. 用户提供真实 ADE / Workspace 时，才写入真实值；
 2. 用户未提供时，绑定字段使用空字符串；
@@ -1170,7 +1206,7 @@ workflow-<主题关键词>-<日期>.yml
 5. 不新增未确认的 Schema 字段；
 6. 绑定建议只放在注释或 task_desc 中。
 
-### 16.5 YAML 语法自检
+### 16.6 YAML 语法自检
 
 1. title 不含未加引号的冒号、中括号、大括号；
 2. label 不含未加引号的特殊字符；
@@ -1195,10 +1231,11 @@ workflow-<主题关键词>-<日期>.yml
 7. 伪造 ADE / Workspace 绑定信息；
 8. 角色建议写入未确认的 `ade_role`；
 9. 使用模板里的真实 ID 冒充当前用户 ID；
-10. 包含敏感明文的工作流；
-11. 自动执行高风险操作的工作流；
-12. title 中包含未加引号的 `:`、`[`、`]`；
-13. 只保证 YAML 能保存，但业务流程无法闭环的工作流。
+10. 用自然语言描述“请加载某技能”替代平台原生 `/技能名` 调用；
+11. 包含敏感明文的工作流；
+12. 自动执行高风险操作的工作流；
+13. title 中包含未加引号的 `:`、`[`、`]`；
+14. 只保证 YAML 能保存，但业务流程无法闭环的工作流。
 
 ---
 
@@ -1215,4 +1252,5 @@ workflow-<主题关键词>-<日期>.yml
 7. 变量流转闭环；
 8. 验收标准有效；
 9. 高风险动作受控；
-10. 用户能在前端补齐 ADE / Workspace 后保存和运行。
+10. 需要复用已有技能时，使用 `/技能名` 直接调用；
+11. 用户能在前端补齐 ADE / Workspace 后保存和运行。
